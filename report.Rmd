@@ -2,7 +2,13 @@
 title: "Practical Machine Learning Project"
 author: Tae Seung Kang
 date: "October 25, 2015"
-output: html_document
+output:
+  html_document:
+    fig_height: 9
+    fig_width: 9
+  pdf_document:
+    fig_height: 9
+    fig_width: 9
 ---
 
 ## Overview
@@ -11,7 +17,7 @@ Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible t
 The goal of this project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. In this report, we describe how we built our model, how we used cross validation, what the expected out of sample error is, and why we made the choices we did. 
 
 
-## Data 
+## Data Preparation
 
 The training data for this project are available here: 
 
@@ -23,15 +29,118 @@ https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 
 The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. 
 
+```{r, cache = T, echo=F}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(corrplot)
 
+os <- .Platform$OS.type
+trainUrl <-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv" # for linux
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv" # for linux
+if(os == "windows") {
+  trainUrl <-"http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv" # for windows
+  testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv" # for windows
+} 
+trainFile <- "./data/pml-training.csv"
+testFile  <- "./data/pml-testing.csv"
+if (!file.exists("./data")) {
+  dir.create("./data")
+}
+if (!file.exists(trainFile)) {
+  if(os == "windows") 
+    download.file(trainUrl, destfile=trainFile, method = "internal") # for windows
+  else
+    download.file(trainUrl, destfile=trainFile, method="curl") # for linux
+}
+if (!file.exists(testFile)) {
+  if(os == "windows") 
+    download.file(testUrl, destfile=testFile, method = "internal") # for windows
+  else
+    download.file(testUrl, destfile=testFile, method="curl") # for linux
+}
+```  
 
-```{r}
-summary(cars)
+After downloading, we load the training and testing data sets assuming they are in directory "./data".
+```{r, cache = T}
+trainset <- read.csv(trainFile)
+testset <- read.csv(testFile)
+dim(trainset)
+dim(testset)
+```
+The training data set contains 19622 observations and 160 variables, while the testing data set contains 20 observations and 160 variables. The "classe" variable in the testing set is the outcome to predict.
+
+### Data Cleaning
+In this step, we clean the data and get rid of missing values as well as some meaningless variables.
+```{r, cache = T, echo=F, results="hide"}
+sum(complete.cases(trainset))
+```
+First, we remove the columns that contain missing values NA.
+```{r, cache = T}
+trainset <- trainset[, colSums(is.na(trainset)) == 0] 
+testset <- testset[, colSums(is.na(testset)) == 0] 
+```  
+Next, we get rid of some columns that do not contribute much to the accelerometer measurements.
+```{r, cache = T}
+classe <- trainset$classe
+trainRemove <- grepl("^X|timestamp|window", names(trainset))
+trainset <- trainset[, !trainRemove]
+trainCleaned <- trainset[, sapply(trainset, is.numeric)]
+trainCleaned$classe <- classe
+testRemove <- grepl("^X|timestamp|window", names(testset))
+testset <- testset[, !testRemove]
+testCleaned <- testset[, sapply(testset, is.numeric)]
+```
+Now, the cleaned training data set contains 19622 observations with 53 variables and the testing data set contains 20 observations with 53 variables. The "classe" variable is still in the cleaned training set.
+
+### Data Splitting
+Then, we can split the cleaned training set into a pure training data set (70%) and a validation data set (30%). We will use the validation data set to conduct cross validation in future steps.  
+```{r, cache = T}
+# Set a seed
+set.seed(500) 
+inTrain <- createDataPartition(trainCleaned$classe, p=0.70, list=F)
+trainset <- trainCleaned[inTrain, ]
+testset <- trainCleaned[-inTrain, ]
 ```
 
+## Data Modeling
+We fit a predictive model for activity recognition using **Random Forest** algorithm because it automatically selects important variables and is robust to correlated covariates & outliers in general. We will use **5-fold cross validation** when applying the algorithm.  
+```{r, cache = T}
+controlRf <- trainControl(method="cv", 5)
+modelRf <- train(classe ~ ., data=trainset, method="rf", trControl=controlRf, ntree=250)
+modelRf
+```
+Then, we estimate the performance of the model on the validation data set.  
+```{r, cache = T}
+predictRf <- predict(modelRf, testset)
+confusionMatrix(testset$classe, predictRf)
+```
+```{r, cache = T}
+accuracy <- postResample(predictRf, testset$classe)
+accuracy
+oose <- 1 - as.numeric(confusionMatrix(testset$classe, predictRf)$overall[1])
+oose
+```
+So, the estimated accuracy of the model is 99.42% and the estimated out-of-sample error is 0.58%.
 
-```{r, echo=FALSE}
-plot(cars)
+## Predicting for Test Data Set
+Now, we apply the model to the original testing data set downloaded from the data source. We remove the `problem_id` column first.  
+```{r, cache = T}
+result <- predict(modelRf, testCleaned[, -length(names(testCleaned))])
+result
+```  
+
+## Appendix: Figures
+1. Correlation Matrix Visualization  
+```{r, cache = T}
+corrPlot <- cor(trainset[, -length(names(trainset))])
+corrplot(corrPlot, method="color")
+```
+2. Decision Tree Visualization
+```{r, cache = T}
+treeModel <- rpart(classe ~ ., data=trainset, method="class")
+prp(treeModel) # fast plot
 ```
 
 
