@@ -1,5 +1,6 @@
 ---
 title: "Practical Machine Learning Project"
+author: Tae Seung Kang
 date: "October 25, 2015"
 output: html_document
 ---
