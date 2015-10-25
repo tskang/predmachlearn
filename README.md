@@ -29,7 +29,7 @@ Due to security concerns with the exchange of R code, your code will not be run 
 
 Please upload a link to the github repository containing your .Rmd or .md file and your compiled HTML file performing your analysis.
 
-For gh-pages branch, click <a href=https://github.com/tskang/predmachlearn/tree/gh-pages>here</a>
+For gh-pages branch, click <a href=https://github.com/tskang/predmachlearn/tree/gh-pages>here</a>.
 
-For the report, click <a href=http://tskang.github.io/predmachlearn/report.html target=_blank>here</a>
+For the report, click <a href=http://tskang.github.io/predmachlearn/report.html target=_blank>here</a>.
 
