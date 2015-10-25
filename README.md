@@ -1,1 +1,1 @@
-# Practical Machine Learning project
+# Practical Machine Learning Project
