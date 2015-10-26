@@ -104,8 +104,35 @@ trainset <- trainCleaned[inTrain, ]
 testset <- trainCleaned[-inTrain, ]
 ```
 
-## Data Modeling
-We fit a predictive model for activity recognition using **Random Forest** algorithm because it automatically selects important variables and is robust to correlated covariates & outliers in general. We will use **5-fold cross validation** when applying the algorithm.  
+## Choosing the Prediction Algorithm:
+
+The predictor we intend to use for this classification problem is a random forest. The reasons we are employing a random forest are:
+
+- After filtering out sparse variables there are still 52 input variables to work with. Random forests are particularly well suited to handle a large number of inputs, especially when the interactions between variables are unknown.
+- A random forest has a built in cross-validation component that gives an unbiased estimate of the forest's out-of-sample (OOB) error rate. This OOB error rate can be helpful in tuning the forest's parameters.
+- A random forest can be used to estimate variable importance. This is especially helpful if the goal is to trim down the inputs into a more parsimonious set.
+- A random forest can handle unscaled variables and categorical variables, which reduces the need for cleaning and transforming variables which are steps that can be subject to overfitting and noise.
+- Individual trees can be pulled out of the random forest and examined. This allows for decent intuition into how the predictor is arriving at its predicted classifications.
+- The random forest's classification output can be expressed as a probability (# trees w classification / total # of trees) which can be used as a confidence estimate for each classification.
+
+
+## Buidling the Model
+
+In order to build a predictive model, we first investigate the features importance.
+The correlation matrix between the features is shown below.
+```{r, cache = T}
+corrPlot <- cor(trainset[, -length(names(trainset))])
+corrplot(corrPlot, method="color")
+```
+
+Also, the decision tree can be used for visualizing the feature importance as follows.
+```{r, cache = T}
+treeModel <- rpart(classe ~ ., data=trainset, method="class")
+prp(treeModel) # fast plot
+```
+
+Based on this information, we fit a predictive model for activity recognition using the random forest algorithm.
+We use 5-fold cross validation to apply the algorithm.  
 ```{r, cache = T}
 controlRf <- trainControl(method="cv", 5)
 modelRf <- train(classe ~ ., data=trainset, method="rf", trControl=controlRf, ntree=250)
@@ -122,25 +149,13 @@ accuracy
 oose <- 1 - as.numeric(confusionMatrix(testset$classe, predictRf)$overall[1])
 oose
 ```
-So, the estimated accuracy of the model is 99.42% and the estimated out-of-sample error is 0.58%.
 
-## Predicting for Test Data Set
-Now, we apply the model to the original testing data set downloaded from the data source. We remove the `problem_id` column first.  
-```{r, cache = T}
-result <- predict(modelRf, testCleaned[, -length(names(testCleaned))])
-result
-```  
 
-## Appendix: Figures
-1. Correlation Matrix Visualization  
-```{r, cache = T}
-corrPlot <- cor(trainset[, -length(names(trainset))])
-corrplot(corrPlot, method="color")
-```
-2. Decision Tree Visualization
-```{r, cache = T}
-treeModel <- rpart(classe ~ ., data=trainset, method="class")
-prp(treeModel) # fast plot
-```
+## Expectation for Out-of-sample Error
+
+The trained random forest will now use the testing sub data set to etimate the out of sample error rate. The sub data error set was origionally apart of the total training set, but it was carved out a left untouched during variable selection, training and tuning of the random forest. Therefore the testing subset should be an unbiased estimate of the random forest's prediction accuracy.
+Based on the missclassificaiton rate on the testing subset, an unbiased estimate of the random forest's out-of-sample error rate is 0.58%.
+ 
+
 
 
