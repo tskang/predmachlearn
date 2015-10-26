@@ -118,20 +118,7 @@ The predictor we intend to use for this classification problem is a random fores
 
 ## Buidling the Model
 
-In order to build a predictive model, we first investigate the features importance.
-The correlation matrix between the features is shown below.
-```{r, cache = T}
-corrPlot <- cor(trainset[, -length(names(trainset))])
-corrplot(corrPlot, method="color")
-```
-
-Also, the decision tree can be used for visualizing the feature importance as follows.
-```{r, cache = T}
-treeModel <- rpart(classe ~ ., data=trainset, method="class")
-prp(treeModel) # fast plot
-```
-
-Based on this information, we fit a predictive model for activity recognition using the random forest algorithm.
+We build a predictive model for activity recognition using the random forest algorithm.
 We use 5-fold cross validation to apply the algorithm.  
 ```{r, cache = T}
 controlRf <- trainControl(method="cv", 5)
@@ -142,7 +129,7 @@ modelRf
 ## Expectation for Out-of-sample Error
 
 The trained random forest will now use the validation data set to etimate the out of sample error rate. The data set was originally part of the total training set, but it was carved out untouched during variable selection, training and tuning of the random forest. Therefore, the validation set should be an unbiased estimate of the random forest's prediction accuracy.
-Thus, we estimate the performance of the model on the validation data set.  
+In the following code, we estimate the performance of the model on the validation data set.  
 ```{r, cache = T}
 predictRf <- predict(modelRf, testset)
 confusionMatrix(testset$classe, predictRf)
