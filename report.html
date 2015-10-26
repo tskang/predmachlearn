@@ -159,7 +159,10 @@ modelRf</code></pre>
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
 ## The final value used for the model was mtry = 27.</code></pre>
-<p>Then, we estimate the performance of the model on the validation data set.</p>
+</div>
+<div id="expectation-for-out-of-sample-error" class="section level2">
+<h2>Expectation for Out-of-sample Error</h2>
+<p>The trained random forest will now use the validation data set to etimate the out of sample error rate. The data set was originally part of the total training set, but it was carved out untouched during variable selection, training and tuning of the random forest. Therefore, the validation set should be an unbiased estimate of the random forest’s prediction accuracy. Thus, we estimate the performance of the model on the validation data set.</p>
 <pre class="r"><code>predictRf &lt;- predict(modelRf, testset)
 confusionMatrix(testset$classe, predictRf)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
@@ -200,10 +203,7 @@ accuracy</code></pre>
 <pre class="r"><code>oose &lt;- 1 - as.numeric(confusionMatrix(testset$classe, predictRf)$overall[1])
 oose</code></pre>
 <pre><code>## [1] 0.006966865</code></pre>
-</div>
-<div id="expectation-for-out-of-sample-error" class="section level2">
-<h2>Expectation for Out-of-sample Error</h2>
-<p>The trained random forest will now use the testing sub data set to etimate the out of sample error rate. The sub data error set was origionally apart of the total training set, but it was carved out a left untouched during variable selection, training and tuning of the random forest. Therefore the testing subset should be an unbiased estimate of the random forest’s prediction accuracy. Based on the missclassificaiton rate on the testing subset, an unbiased estimate of the random forest’s out-of-sample error rate is 0.58%.</p>
+<p>Based on the missclassificaiton rate on the validation set, an unbiased estimate of the random forest’s out-of-sample error rate is 0.6966865%.</p>
 </div>
 
 
